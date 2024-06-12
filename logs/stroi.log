@@ -1,0 +1,5 @@
+INFO:aiogram.dispatcher:2024-06-11 16:27:44,347: Start polling
+INFO:aiogram.dispatcher:2024-06-11 16:27:44,396: Run polling for bot @StroiCommmBot id=7292449019 - 'СтройКом'
+INFO:aiogram.event:2024-06-11 16:27:44,442: Update id=96225079 is not handled. Duration 0 ms by bot id=7292449019
+INFO:aiogram.dispatcher:2024-06-11 16:28:02,536: Polling stopped
+INFO:aiogram.dispatcher:2024-06-11 16:28:02,536: Polling stopped for bot @StroiCommmBot id=7292449019 - 'СтройКом'
