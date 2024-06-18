@@ -15,65 +15,6 @@ router = Router()
 bot = Bot(token=config.bot_token.get_secret_value())
 
 
-@router.callback_query(F.data == "question_cancel")
-async def question_cansel(callback: types.CallbackQuery):
-    await callback.message.edit_text("<i>Отмена.</i>\n\n<b>Обращайтесь позже!</b>", parse_mode="HTML")
-
-
-@router.callback_query(F.data == "question_yesno_yes")
-async def question_yesno_yes(callback: types.CallbackQuery):
-    await callback.message.edit_text("<i>Вы согласны пройти опрос? – Да!</i>\n\n"
-                                     "<b>Где вы планируете построить дом?</b>",
-                                     parse_mode="HTML", reply_markup=inline.question_home_location())
-
-
-@router.callback_query(inline.QuestionHomeSquareData.filter())
-async def question_home_square(callback: types.CallbackQuery, callback_data: inline.QuestionHomeSquareData):
-    await callback.message.edit_text(
-        f"<i>Вы согласны пройти опрос? – Да!\nМестоположение дома? – {decoder.d_city(callback_data.city)}.</i>\n\n"
-        f"<b>Сколько квадратных метров планируется быть в вашем доме?</b>",
-        parse_mode="HTML", reply_markup=inline.question_home_square(callback_data.city))
-
-
-@router.callback_query(inline.QuestionBudgetData.filter())
-async def question_home_budget(callback: types.CallbackQuery, callback_data: inline.QuestionBudgetData):
-    await callback.message.edit_text(
-        f"<i>Вы согласны пройти опрос? – Да!\nМестоположение дома? – {decoder.d_city(callback_data.city)}.\n"
-        f"Площадь дома? – {decoder.d_square(callback_data.square)}.</i>\n\n"
-        f"<b>Какой вы планируете бюджет?</b>", parse_mode="HTML",
-        reply_markup=inline.question_home_budget(callback_data.city, callback_data.square))
-
-
-@router.callback_query(inline.QuestionFinally.filter())
-async def question_home_finally(callback: types.CallbackQuery, callback_data: inline.QuestionFinally):
-    city = decoder.d_city(callback_data.city)
-    square = decoder.d_square(callback_data.square)
-    budget = decoder.d_budget(callback_data.budget)
-    await callback.message.edit_text(
-        f"<i>Вы согласны пройти опрос? – Да!\nМестоположение дома? – {city}.\n"
-        f"Площадь дома? – {square}."
-        f"\nПланируемый бюджет? – {budget}</i>\n\n"
-        f"<b>Спасибо за прохождение опроса, наш менеджер скоро с вами свяжется!</b>", parse_mode="HTML")
-    db_sqlite3.cur.execute("INSERT INTO users VALUES(?, ?, ?, ?, ?);",
-                           (callback.from_user.id, callback_data.city, callback_data.square, callback_data.budget,
-                            datetime.datetime.now()))
-    db_sqlite3.db.commit()
-    for admin in admin_list.list:
-        if callback.from_user.username:
-            user_link = html.link(callback.from_user.full_name, f"t.me/{callback.from_user.username}")
-        else:
-            user_link = html.link(callback.from_user.full_name, callback.from_user.url)
-        await bot.send_message(admin, f"<b>Новое обращение!</b>"
-                                      f"\n\n{user_link}\nID: {callback.from_user.id}"
-                                      f"\nМестоположение: {city}."
-                                      f"\nПлощадь: {square}."
-                                      f"\nБюджет: {budget}."
-                                      f"\nВремя обращения: {datetime.datetime.now()}.",
-                               parse_mode="HTML")
-    await asyncio.sleep(0.5)
-    await start(callback.message)
-
-
 @router.message(F.text, Command("start"))
 async def start(message: types.Message):
     await message.answer("Добрый день! Вас приветствует компания <b>«СтройНет»</b>. Для выяснения подробной "
@@ -126,3 +67,63 @@ async def question(message: types.Message):
     await reply_message.delete()
     await message.reply("Давайте для начала пройдём небольшой опрос.\n<b>Вы согласны?</b>",
                         parse_mode="HTML", reply_markup=inline.question_yes_no())
+
+
+@router.callback_query(F.data == "question_cancel")
+async def question_cansel(callback: types.CallbackQuery):
+    await callback.message.answer("<i>Отмена.</i>\n\n<b>Обращайтесь позже!</b>", parse_mode="HTML")
+    await start(callback.message)
+
+
+@router.callback_query(F.data == "question_yesno_yes")
+async def question_yesno_yes(callback: types.CallbackQuery):
+    await callback.message.answer("<i>Вы согласны пройти опрос? – Да!</i>\n\n"
+                                     "<b>Где вы планируете построить дом?</b>",
+                                     parse_mode="HTML", reply_markup=inline.question_home_location())
+
+
+@router.callback_query(inline.QuestionHomeSquareData.filter())
+async def question_home_square(callback: types.CallbackQuery, callback_data: inline.QuestionHomeSquareData):
+    await callback.message.answer(
+        f"<i>Вы согласны пройти опрос? – Да!\nМестоположение дома? – {decoder.d_city(callback_data.city)}.</i>\n\n"
+        f"<b>Сколько квадратных метров планируется быть в вашем доме?</b>",
+        parse_mode="HTML", reply_markup=inline.question_home_square(callback_data.city))
+
+
+@router.callback_query(inline.QuestionBudgetData.filter())
+async def question_home_budget(callback: types.CallbackQuery, callback_data: inline.QuestionBudgetData):
+    await callback.message.answer(
+        f"<i>Вы согласны пройти опрос? – Да!\nМестоположение дома? – {decoder.d_city(callback_data.city)}.\n"
+        f"Площадь дома? – {decoder.d_square(callback_data.square)}.</i>\n\n"
+        f"<b>Какой вы планируете бюджет?</b>", parse_mode="HTML",
+        reply_markup=inline.question_home_budget(callback_data.city, callback_data.square))
+
+
+@router.callback_query(inline.QuestionFinally.filter())
+async def question_home_finally(callback: types.CallbackQuery, callback_data: inline.QuestionFinally):
+    city = decoder.d_city(callback_data.city)
+    square = decoder.d_square(callback_data.square)
+    budget = decoder.d_budget(callback_data.budget)
+    await callback.message.answer(
+        f"<i>Вы согласны пройти опрос? – Да!\nМестоположение дома? – {city}.\n"
+        f"Площадь дома? – {square}."
+        f"\nПланируемый бюджет? – {budget}</i>\n\n"
+        f"<b>Спасибо за прохождение опроса, наш менеджер скоро с вами свяжется!</b>", parse_mode="HTML")
+    db_sqlite3.cur.execute("INSERT INTO users VALUES(?, ?, ?, ?, ?);",
+                           (callback.from_user.id, callback_data.city, callback_data.square, callback_data.budget,
+                            datetime.datetime.now()))
+    db_sqlite3.db.commit()
+    for admin in admin_list.list:
+        if callback.from_user.username:
+            user_link = html.link(callback.from_user.full_name, f"t.me/{callback.from_user.username}")
+        else:
+            user_link = html.link(callback.from_user.full_name, callback.from_user.url)
+        await bot.send_message(admin, f"<b>Новое обращение!</b>"
+                                      f"\n\n{user_link}\nID: {callback.from_user.id}"
+                                      f"\nМестоположение: {city}."
+                                      f"\nПлощадь: {square}."
+                                      f"\nБюджет: {budget}."
+                                      f"\nВремя обращения: {datetime.datetime.now()}.",
+                               parse_mode="HTML")
+    await asyncio.sleep(0.5)
+    await start(callback.message)
